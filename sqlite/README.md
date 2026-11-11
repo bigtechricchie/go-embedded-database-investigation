@@ -13,13 +13,14 @@ The investigation focuses on the Go integration as much as SQLite itself because
 - reproducibility
 - supply-chain review
 
-## Current driver
+## Candidates
 
-The first candidate is:
+The current SQLite candidates are:
 
-- [ncruces/go-sqlite3](./ncruces/)
+- [ncruces/go-sqlite3](./ncruces/) — measured initial candidate.
+- [modernc.org/sqlite](./modernc/) — investigation pending.
 
-The investigation uses a minimal `database/sql` consumer and then measures the actual compiled dependency path.
+The same methodology should be applied to each candidate so comparisons are based on equivalent evidence rather than assumptions.
 
 ## Why SQLite is interesting
 
@@ -58,6 +59,8 @@ SQLite should not be selected merely as a supposed solution to true multi-writer
 
 ## Current status
 
-The ncruces dependency experiment is promising, but the overall SQLite investigation remains open.
+The ncruces dependency experiment is promising.
 
-Future work may compare additional drivers and operational behaviour before any production recommendation is made.
+The modernc candidate has been added to the investigation but has not yet been measured.
+
+No production recommendation should be made until candidates are compared using the same minimal-consumer, dependency, build, and vulnerability checks.

@@ -10,7 +10,8 @@ The investigation currently covers:
 
 - [bbolt](./bbolt/) as a small key/value persistence baseline.
 - [SQLite](./sqlite/) as an embedded relational database option.
-- [ncruces/go-sqlite3](./sqlite/ncruces/) as the first SQLite driver under review.
+- [ncruces/go-sqlite3](./sqlite/ncruces/) as the first measured SQLite driver.
+- [modernc.org/sqlite](./sqlite/modernc/) as the next SQLite candidate to investigate.
 - [Frontend filtering benchmarks](./benchmarks/frontend-filtering/) for applications that may keep lightweight record summaries in browser memory.
 - [Investigation methodology and findings](./docs/).
 
@@ -106,6 +107,12 @@ from `govulncheck ./...` at the time of the experiment.
 
 See [ncruces findings](./sqlite/ncruces/README.md).
 
+### SQLite with modernc.org/sqlite
+
+`modernc.org/sqlite` is included as the next comparison candidate. Its findings are intentionally marked as pending until the same minimal-consumer, dependency, build, and vulnerability checks have been run.
+
+See [modernc investigation plan](./sqlite/modernc/README.md).
+
 ### Frontend filtering
 
 A simple JavaScript benchmark produced:
@@ -156,6 +163,8 @@ The investigation remains open and conclusions will change only when new evidenc
 │   └── methodology.md
 └── sqlite/
     ├── README.md
+    ├── modernc/
+    │   └── README.md
     └── ncruces/
         └── README.md
 ```
