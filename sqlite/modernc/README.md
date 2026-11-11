@@ -6,9 +6,9 @@
 
 ## Status
 
-**Dependency findings measured.**
+**Dependency and verification findings measured.**
 
-Build verification, tests, module verification, and vulnerability scanning remain pending until their results are explicitly reported.
+The minimal consumer was verified with Go 1.27.2 on Windows.
 
 ## Minimal consumer
 
@@ -33,8 +33,6 @@ func main() {
 	}
 }
 ```
-
-The experiment used Go 1.27.2.
 
 ## Selected module graph
 
@@ -136,6 +134,90 @@ github.com/remyoudompheng/bigfft
 
 These are genuine implementation dependencies of the tested minimal SQLite consumer.
 
+## Verification results
+
+### Module integrity
+
+Command:
+
+```powershell
+go mod verify
+```
+
+Measured result:
+
+```text
+all modules verified
+```
+
+This confirms the downloaded module contents match the checksums recorded by the Go module system. It is an integrity check, not a trust or malicious-code guarantee.
+
+### Build
+
+Command:
+
+```powershell
+go build .
+```
+
+Measured result:
+
+```text
+success
+```
+
+The minimal consumer built successfully on the tested Windows development machine.
+
+### Tests
+
+Command:
+
+```powershell
+go test ./...
+```
+
+Measured result:
+
+```text
+?       sqlite-driver-investigation-modernc     [no test files]
+```
+
+This confirms the package compiled successfully under `go test`; the fixture currently contains no test files.
+
+### Vulnerability scan
+
+Command:
+
+```powershell
+govulncheck ./...
+```
+
+Measured result:
+
+```text
+No vulnerabilities found.
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 2
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
+```
+
+This distinction is important.
+
+The scan reported:
+
+```text
+reachable vulnerabilities in application code: 0
+vulnerabilities in imported packages:            0
+vulnerabilities in required modules:              2
+reachable calls to those module vulnerabilities:  no
+```
+
+Therefore, it would be misleading to record only "No vulnerabilities found" without also preserving the two vulnerable-module findings.
+
+The verbose output should be inspected separately if the exact module advisories need to be documented.
+
 ## Current comparison with ncruces
 
 Measured simplified dependency shapes:
@@ -166,28 +248,23 @@ That does not make modernc unsuitable. It means its implementation approach carr
 ## Current assessment
 
 ```text
-CGO requirement:             No
-database/sql support:        Yes
-Windows dependency path:     Measured
-Compiled dependency surface: Materially larger than ncruces
-Dependency paths:            Clearly attributable
-Build verification:          Pending
-go test:                     Pending
-go mod verify:               Pending
-govulncheck:                 Pending
+CGO requirement:                 No
+database/sql support:            Yes
+Windows dependency path:         Measured
+Compiled dependency surface:     Materially larger than ncruces
+Dependency paths:                Clearly attributable
+go mod verify:                   Passed
+go build:                        Passed
+go test:                         Passed; no test files
+Reachable vulnerabilities:       0
+Imported-package vulnerabilities: 0
+Required-module vulnerabilities:  2, not reached by application code
 ```
 
-## Remaining checks
+## Current position
 
-Before recording a broader recommendation, run:
+modernc remains a technically viable CGO-free SQLite option.
 
-```powershell
-go mod verify
-go build .
-go test ./...
-govulncheck ./...
-```
+Under this repository's dependency-minimisation criteria, ncruces currently has the smaller measured compiled dependency surface.
 
-The results should be recorded exactly as observed.
-
-No clean vulnerability status should be claimed until `govulncheck` has actually been run and reported.
+The two required-module vulnerability findings should be investigated with verbose `govulncheck` output before any production recommendation is made.
