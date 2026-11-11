@@ -8,12 +8,24 @@ The goal is to compare embedded database choices using reproducible evidence rat
 
 1. Test a minimal real consumer, not only the upstream repository.
 2. Distinguish module selection from packages compiled into the application.
-3. Record exact versions used by an experiment.
+3. Record exact versions used by an experiment and use the latest approved patch release of the selected Go minor version.
 4. Prefer standard Go tooling for dependency analysis.
 5. Treat vulnerability scanning as one security signal, not proof of safety.
 6. Keep synthetic benchmark data free of confidential or customer information.
 7. Measure before adding optimisations or infrastructure.
 8. Preserve historical findings when a later experiment changes the conclusion.
+
+## Go toolchain baseline
+
+The current investigation baseline is:
+
+```text
+Go 1.27.4
+```
+
+Go 1.27.2 was used for earlier measurements, but verbose vulnerability scanning identified standard-library advisories fixed in Go 1.27.3 and Go 1.27.4. New verification runs should therefore use Go 1.27.4 or a later deliberately approved patch release within the selected minor version.
+
+The toolchain version is part of the security baseline and should be recorded with benchmark and dependency results.
 
 ## Dependency workflow
 

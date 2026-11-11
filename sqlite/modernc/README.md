@@ -6,9 +6,9 @@
 
 ## Status
 
-**Dependency findings measured.**
+**Dependency and verification findings measured.**
 
-Build verification, tests, module verification, and vulnerability scanning remain pending until their results are explicitly reported.
+The initial minimal-consumer measurements were taken with Go 1.27.2 on Windows. A verbose vulnerability scan identified two standard-library advisories fixed by later Go 1.27 patch releases, so Go 1.27.4 is now the required baseline for the next verification run.
 
 ## Minimal consumer
 
@@ -33,8 +33,6 @@ func main() {
 	}
 }
 ```
-
-The experiment used Go 1.27.2.
 
 ## Selected module graph
 
@@ -136,6 +134,113 @@ github.com/remyoudompheng/bigfft
 
 These are genuine implementation dependencies of the tested minimal SQLite consumer.
 
+## Verification results
+
+### Module integrity
+
+Command:
+
+```powershell
+go mod verify
+```
+
+Measured result:
+
+```text
+all modules verified
+```
+
+This confirms the downloaded module contents match the checksums recorded by the Go module system. It is an integrity check, not a trust or malicious-code guarantee.
+
+### Build
+
+Command:
+
+```powershell
+go build .
+```
+
+Measured result:
+
+```text
+success
+```
+
+The minimal consumer built successfully on the tested Windows development machine.
+
+### Tests
+
+Command:
+
+```powershell
+go test ./...
+```
+
+Measured result:
+
+```text
+?       sqlite-driver-investigation-modernc     [no test files]
+```
+
+This confirms the package compiled successfully under `go test`; the fixture currently contains no test files.
+
+### Vulnerability scan
+
+Command:
+
+```powershell
+govulncheck ./...
+```
+
+Measured result:
+
+```text
+No vulnerabilities found.
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 2
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
+```
+
+This distinction is important.
+
+The scan reported:
+
+```text
+reachable vulnerabilities in application code: 0
+vulnerabilities in imported packages:            0
+vulnerabilities in required modules:              2
+reachable calls to those module vulnerabilities:  no
+```
+
+A verbose scan identified both findings as Go standard-library vulnerabilities rather than vulnerabilities in modernc or its third-party dependency graph:
+
+```text
+GO-2026-6859
+HTTP/1 server crash due to MaxBytesReader header race in net/http
+Found in: stdlib@go1.27.2
+Fixed in: stdlib@go1.27.4
+
+GO-2026-6809
+Distrust compromised intermediate certificates in crypto/x509
+Found in: stdlib@go1.27.2
+Fixed in: stdlib@go1.27.3
+```
+
+The modernc dependency scan therefore identified:
+
+```text
+reachable vulnerabilities in application code: 0
+vulnerabilities in imported packages:            0
+third-party dependency vulnerabilities found:    0
+standard-library module vulnerabilities:          2
+```
+
+Both standard-library advisories are addressed by Go 1.27.4, which is now the required investigation baseline.
+
+These findings should not be attributed to `modernc.org/sqlite`.
+
 ## Current comparison with ncruces
 
 Measured simplified dependency shapes:
@@ -166,28 +271,25 @@ That does not make modernc unsuitable. It means its implementation approach carr
 ## Current assessment
 
 ```text
-CGO requirement:             No
-database/sql support:        Yes
-Windows dependency path:     Measured
-Compiled dependency surface: Materially larger than ncruces
-Dependency paths:            Clearly attributable
-Build verification:          Pending
-go test:                     Pending
-go mod verify:               Pending
-govulncheck:                 Pending
+CGO requirement:                 No
+database/sql support:            Yes
+Windows dependency path:         Measured
+Compiled dependency surface:     Materially larger than ncruces
+Dependency paths:                Clearly attributable
+go mod verify:                   Passed
+go build:                        Passed
+go test:                         Passed; no test files
+Reachable vulnerabilities:       0
+Imported-package vulnerabilities: 0
+Third-party dependency vulnerabilities: 0 identified
+Go stdlib vulnerabilities:            2 on Go 1.27.2; fixed by Go 1.27.4
+Required Go baseline:                  1.27.4
 ```
 
-## Remaining checks
+## Current position
 
-Before recording a broader recommendation, run:
+modernc remains a technically viable CGO-free SQLite option.
 
-```powershell
-go mod verify
-go build .
-go test ./...
-govulncheck ./...
-```
+Under this repository's dependency-minimisation criteria, ncruces currently has the smaller measured compiled dependency surface.
 
-The results should be recorded exactly as observed.
-
-No clean vulnerability status should be claimed until `govulncheck` has actually been run and reported.
+The two reported module findings were traced to the Go 1.27.2 standard library, not modernc. The next verification run should use Go 1.27.4 and repeat `go mod verify`, `go build .`, `go test ./...`, and `govulncheck -show verbose ./...` before recording the final security baseline.

@@ -11,7 +11,7 @@ The investigation currently covers:
 - [bbolt](./bbolt/) as a small key/value persistence baseline.
 - [SQLite](./sqlite/) as an embedded relational database option.
 - [ncruces/go-sqlite3](./sqlite/ncruces/) as the first measured SQLite driver.
-- [modernc.org/sqlite](./sqlite/modernc/) as the next SQLite candidate to investigate.
+- [modernc.org/sqlite](./sqlite/modernc/) as the second measured SQLite candidate.
 - [Frontend filtering benchmarks](./benchmarks/frontend-filtering/) for applications that may keep lightweight record summaries in browser memory.
 - [Investigation methodology and findings](./docs/).
 
@@ -109,9 +109,9 @@ See [ncruces findings](./sqlite/ncruces/README.md).
 
 ### SQLite with modernc.org/sqlite
 
-`modernc.org/sqlite` is included as the next comparison candidate. Its findings are intentionally marked as pending until the same minimal-consumer, dependency, build, and vulnerability checks have been run.
+`modernc.org/sqlite v1.62.0` has now been measured using the same minimal-consumer methodology. It has a materially larger compiled dependency surface than ncruces, but the verbose vulnerability scan identified 0 reachable vulnerabilities and no third-party dependency vulnerability findings. Two reported advisories belonged to the Go 1.27.2 standard library and are fixed by Go 1.27.4.
 
-See [modernc investigation plan](./sqlite/modernc/README.md).
+See [modernc findings](./sqlite/modernc/README.md).
 
 ### Frontend filtering
 
@@ -168,6 +168,16 @@ The investigation remains open and conclusions will change only when new evidenc
     └── ncruces/
         └── README.md
 ```
+
+## Go baseline
+
+New verification runs use:
+
+```text
+Go 1.27.4
+```
+
+Earlier Go 1.27.2 measurements are preserved as historical evidence, but standard-library advisories found during verbose scanning make 1.27.4 the current required baseline.
 
 ## Status
 

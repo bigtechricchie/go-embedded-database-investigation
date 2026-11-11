@@ -54,7 +54,7 @@ No vulnerabilities found.
 
 That means no known reachable vulnerabilities were reported for the analysed code at the time of the experiment. It is not a general proof of safety.
 
-## SQLite: modernc dependency finding
+## SQLite: modernc dependency and verification finding
 
 Tested candidate:
 
@@ -95,9 +95,40 @@ application
 → github.com/remyoudompheng/bigfft
 ```
 
-This makes modernc materially heavier than ncruces under the repository's dependency-minimisation criteria.
+Verification results:
 
-Build verification, tests, module verification, and vulnerability scanning are still pending and are not claimed as complete.
+```text
+go mod verify
+→ all modules verified
+
+go build .
+→ success
+
+go test ./...
+→ package compiled; no test files
+
+govulncheck ./...
+→ 0 reachable vulnerabilities
+→ 0 vulnerabilities in imported packages
+→ 2 vulnerabilities in required modules
+→ application does not appear to call those vulnerable code paths
+```
+
+The verbose scan showed that both reported module findings belong to the Go 1.27.2 standard library, not to modernc or its third-party dependencies:
+
+```text
+GO-2026-6859
+net/http
+fixed in Go 1.27.4
+
+GO-2026-6809
+crypto/x509
+fixed in Go 1.27.3
+```
+
+The appropriate remediation is therefore to update the experiment baseline to Go 1.27.4 and rerun verification. These advisories should not be counted against modernc's third-party dependency security result.
+
+modernc remains materially heavier than ncruces under the repository's dependency-minimisation criteria, but the measured vulnerability evidence does not currently identify a modernc third-party dependency vulnerability.
 
 ## Frontend filtering finding
 
@@ -153,7 +184,7 @@ bbolt remains a credible choice for modest-write applications with simple persis
 
 Among the two measured CGO-free SQLite candidates, ncruces currently has the smaller compiled dependency surface.
 
-modernc remains technically viable, but its minimal consumer carries a broader implementation stack and therefore a larger dependency-review surface.
+modernc remains technically viable and passed the measured integrity/build/test checks, with 0 reachable vulnerabilities reported. The two module findings were traced to the Go 1.27.2 standard library and are fixed by Go 1.27.4; they are not modernc dependency findings.
 
 SQLite remains a credible choice when relational querying, constraints, reporting, and index complexity justify its additional dependency surface.
 
