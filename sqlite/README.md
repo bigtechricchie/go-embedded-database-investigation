@@ -17,10 +17,28 @@ The investigation focuses on the Go integration as much as SQLite itself because
 
 The current SQLite candidates are:
 
-- [ncruces/go-sqlite3](./ncruces/) — measured initial candidate.
-- [modernc.org/sqlite](./modernc/) — investigation pending.
+- [ncruces/go-sqlite3](./ncruces/) — dependency and vulnerability findings measured.
+- [modernc.org/sqlite](./modernc/) — dependency findings measured; build/test/vulnerability verification still pending.
 
-The same methodology should be applied to each candidate so comparisons are based on equivalent evidence rather than assumptions.
+The same methodology is applied so comparisons are based on equivalent evidence rather than assumptions.
+
+## Current dependency comparison
+
+The measured minimal consumers currently show:
+
+```text
+ncruces
+→ smaller compiled dependency surface
+→ CGO-free
+
+modernc
+→ materially larger compiled dependency surface
+→ CGO-free
+```
+
+This does not establish a universal winner.
+
+The dependency result is one input alongside reliability, operational behaviour, feature requirements, security scanning, and maintenance quality.
 
 ## Why SQLite is interesting
 
@@ -59,8 +77,17 @@ SQLite should not be selected merely as a supposed solution to true multi-writer
 
 ## Current status
 
-The ncruces dependency experiment is promising.
+The ncruces dependency experiment remains promising.
 
-The modernc candidate has been added to the investigation but has not yet been measured.
+The modernc experiment confirms a broader compiled dependency surface in the equivalent minimal consumer.
 
-No production recommendation should be made until candidates are compared using the same minimal-consumer, dependency, build, and vulnerability checks.
+The remaining modernc checks are:
+
+```text
+go mod verify
+go build .
+go test ./...
+govulncheck ./...
+```
+
+No clean build/test/vulnerability result is claimed until those commands are run and reported.
