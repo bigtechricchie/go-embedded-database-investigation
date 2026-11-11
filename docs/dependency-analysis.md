@@ -79,37 +79,87 @@ github.com/ncruces/go-sqlite3/driver
 
 Optional upstream dependencies such as UUID, approximate-counting, additional crypto, and Unicode extension packages did not appear in that minimal compiled path.
 
-## Why the SQLite dependencies exist
+Measured `go mod why` output established clear reasons for julianday, the SQLite WASM engine, and `x/sys`.
 
-Measured `go mod why` output established these paths:
+## modernc.org/sqlite baseline
+
+The equivalent minimal consumer used:
+
+```text
+modernc.org/sqlite v1.62.0
+```
+
+Its selected graph included:
+
+```text
+github.com/dustin/go-humanize
+github.com/google/uuid
+github.com/mattn/go-isatty
+github.com/ncruces/go-strftime
+github.com/remyoudompheng/bigfft
+golang.org/x/sys
+modernc.org/libc
+modernc.org/mathutil
+modernc.org/memory
+```
+
+The compiled package graph showed that most of this heavier runtime-support stack is actually part of the minimal application path.
+
+Relevant compiled packages included:
+
+```text
+github.com/dustin/go-humanize
+github.com/mattn/go-isatty
+github.com/ncruces/go-strftime
+golang.org/x/sys/cpu
+golang.org/x/sys/windows
+modernc.org/libc/errno
+modernc.org/libc/fcntl
+modernc.org/libc/limits
+modernc.org/libc/pthread
+modernc.org/libc/signal
+modernc.org/libc/stdio
+modernc.org/libc/sys/stat
+modernc.org/libc/sys/types
+modernc.org/libc/time
+modernc.org/libc/unistd
+github.com/remyoudompheng/bigfft
+modernc.org/mathutil
+modernc.org/memory
+modernc.org/libc
+modernc.org/sqlite/lib
+modernc.org/sqlite/vtab
+modernc.org/sqlite
+```
+
+Measured `go mod why` output established these chains:
 
 ```text
 application
-→ go-sqlite3/driver
-→ go-sqlite3
-→ julianday
+→ modernc.org/sqlite
+→ modernc.org/libc
 ```
 
 ```text
 application
-→ go-sqlite3/driver
-→ go-sqlite3
-→ go-sqlite3-wasm/v6
+→ modernc.org/sqlite
+→ modernc.org/libc
+→ modernc.org/memory
 ```
 
 ```text
 application
-→ go-sqlite3/driver
-→ go-sqlite3
-→ internal/sqlite3_wrap
-→ golang.org/x/sys
+→ modernc.org/sqlite
+→ modernc.org/libc
+→ modernc.org/mathutil
+→ github.com/remyoudompheng/bigfft
 ```
 
-These are therefore real dependencies of the tested SQLite application path.
+This confirms that the larger modernc dependency surface is not merely selected-module noise.
 
 ## go.sum is not the executable
 
-The SQLite experiment also contained `golang.org/x/text` checksums even though `x/text` did not appear in the measured minimal compiled package list.
+The ncruces experiment also contained `golang.org/x/text` checksums even though `x/text` did not appear in the measured minimal compiled package list.
 
 This is why `go.sum` must not be treated as a list of code linked into the executable.
 
@@ -117,7 +167,7 @@ Do not manually prune `go.sum`. Let Go manage it through `go mod tidy`.
 
 ## Current comparison
 
-At the tested versions:
+Measured simplified shapes:
 
 ```text
 bbolt
@@ -133,4 +183,17 @@ ncruces SQLite
 → x/sys
 ```
 
-SQLite has a larger practical dependency surface, but the measured difference is substantially smaller than a broad reading of its upstream module graph initially suggested.
+```text
+modernc SQLite
+→ modernc.org/sqlite
+→ modernc.org/libc
+   ├── modernc.org/memory
+   └── modernc.org/mathutil
+       └── bigfft
+→ x/sys
+→ additional supporting packages
+```
+
+Under a dependency-minimisation criterion, the measured modernc consumer has the broadest compiled third-party surface of the three current baselines.
+
+That is an engineering trade-off, not proof that modernc is unsafe or unsuitable.
