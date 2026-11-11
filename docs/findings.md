@@ -114,9 +114,21 @@ govulncheck ./...
 → application does not appear to call those vulnerable code paths
 ```
 
-The vulnerability result must be interpreted carefully. The application has no reported reachable vulnerabilities, but the required module graph still contains two vulnerability findings.
+The verbose scan showed that both reported module findings belong to the Go 1.27.2 standard library, not to modernc or its third-party dependencies:
 
-This makes modernc materially heavier than ncruces under the repository's dependency-minimisation criteria and gives it a broader security-review surface.
+```text
+GO-2026-6859
+net/http
+fixed in Go 1.27.4
+
+GO-2026-6809
+crypto/x509
+fixed in Go 1.27.3
+```
+
+The appropriate remediation is therefore to update the experiment baseline to Go 1.27.4 and rerun verification. These advisories should not be counted against modernc's third-party dependency security result.
+
+modernc remains materially heavier than ncruces under the repository's dependency-minimisation criteria, but the measured vulnerability evidence does not currently identify a modernc third-party dependency vulnerability.
 
 ## Frontend filtering finding
 
@@ -172,7 +184,7 @@ bbolt remains a credible choice for modest-write applications with simple persis
 
 Among the two measured CGO-free SQLite candidates, ncruces currently has the smaller compiled dependency surface.
 
-modernc remains technically viable and passed the measured integrity/build/test checks, with 0 reachable vulnerabilities reported. However, its required module graph contains two vulnerability findings that are not reached by the current minimal application path.
+modernc remains technically viable and passed the measured integrity/build/test checks, with 0 reachable vulnerabilities reported. The two module findings were traced to the Go 1.27.2 standard library and are fixed by Go 1.27.4; they are not modernc dependency findings.
 
 SQLite remains a credible choice when relational querying, constraints, reporting, and index complexity justify its additional dependency surface.
 
