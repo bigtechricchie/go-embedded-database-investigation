@@ -2,48 +2,15 @@
 
 ## Candidate
 
-`modernc.org/sqlite`
+`modernc.org/sqlite v1.62.0`
 
 ## Status
 
-**Investigation pending.**
+**Dependency findings measured.**
 
-This candidate has not yet been measured in this repository.
+Build verification, tests, module verification, and vulnerability scanning remain pending until their results are explicitly reported.
 
-The purpose of this folder is to evaluate `modernc.org/sqlite` using the same evidence-based process already applied to `github.com/ncruces/go-sqlite3`.
-
-No dependency-size, performance, security, or production-suitability conclusion should be inferred from this document yet.
-
-## Why investigate it
-
-`modernc.org/sqlite` is relevant because it provides a CGO-free SQLite implementation for Go.
-
-That makes it useful to compare when:
-
-- Windows development matters
-- a C compiler should not be required
-- `database/sql` integration is desirable
-- reproducible Go builds are important
-- dependency and supply-chain review are part of the database decision
-
-## Questions to answer
-
-The investigation should establish:
-
-- exact version tested
-- Go version used
-- selected module graph
-- actual compiled package graph
-- why each important transitive module is present
-- relationship with `modernc.org/libc`
-- CGO requirements
-- Windows build behaviour
-- `database/sql` behaviour
-- vulnerability-scan results
-- module verification result
-- operational considerations such as WAL, backup, and migrations
-
-## Planned minimal consumer
+## Minimal consumer
 
 ```go
 package main
@@ -67,33 +34,160 @@ func main() {
 }
 ```
 
-The exact driver name and DSN should be verified against the version selected for the experiment before treating this fixture as final evidence.
+The experiment used Go 1.27.2.
 
-## Planned dependency commands
+## Selected module graph
+
+The resulting `go.mod` contained:
+
+```text
+modernc.org/sqlite v1.62.0
+
+github.com/dustin/go-humanize v1.1.0
+github.com/google/uuid v1.6.0
+github.com/mattn/go-isatty v0.0.24
+github.com/ncruces/go-strftime v1.1.0
+github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec
+golang.org/x/sys v0.49.0
+modernc.org/libc v1.80.1
+modernc.org/mathutil v1.7.1
+modernc.org/memory v1.12.1
+```
+
+At the selected-module level, this is materially larger than the measured ncruces candidate.
+
+## Compiled package path
+
+The minimal application produced this relevant external package output:
+
+```text
+github.com/dustin/go-humanize
+github.com/mattn/go-isatty
+github.com/ncruces/go-strftime
+golang.org/x/sys/cpu
+vendor/golang.org/x/net/dns/dnsmessage
+golang.org/x/sys/windows
+modernc.org/libc/errno
+modernc.org/libc/fcntl
+modernc.org/libc/limits
+modernc.org/libc/pthread
+modernc.org/libc/signal
+modernc.org/libc/stdio
+modernc.org/libc/sys/stat
+modernc.org/libc/sys/types
+modernc.org/libc/time
+modernc.org/libc/unistd
+github.com/remyoudompheng/bigfft
+modernc.org/mathutil
+modernc.org/memory
+modernc.org/libc
+modernc.org/sqlite/lib
+modernc.org/sqlite/vtab
+modernc.org/sqlite
+```
+
+The `vendor/golang.org/x/net/dns/dnsmessage` entry comes from Go toolchain/standard-library vendored code and should not be counted as another application module dependency.
+
+## Important finding
+
+Unlike the ncruces experiment, most of modernc's larger dependency surface is actually present in the compiled package graph of the minimal consumer.
+
+This is therefore not only module-graph noise.
+
+## Why the core supporting modules exist
+
+Measured `go mod why` output established these paths.
+
+### modernc.org/libc
+
+```text
+sqlite-driver-investigation-modernc
+modernc.org/sqlite
+modernc.org/libc
+```
+
+### modernc.org/memory
+
+```text
+sqlite-driver-investigation-modernc
+modernc.org/sqlite
+modernc.org/libc
+modernc.org/memory
+```
+
+### modernc.org/mathutil
+
+```text
+sqlite-driver-investigation-modernc
+modernc.org/sqlite
+modernc.org/libc
+modernc.org/mathutil
+```
+
+### github.com/remyoudompheng/bigfft
+
+```text
+sqlite-driver-investigation-modernc
+modernc.org/sqlite
+modernc.org/libc
+modernc.org/mathutil
+github.com/remyoudompheng/bigfft
+```
+
+These are genuine implementation dependencies of the tested minimal SQLite consumer.
+
+## Current comparison with ncruces
+
+Measured simplified dependency shapes:
+
+```text
+ncruces/go-sqlite3
+→ go-sqlite3
+→ go-sqlite3-wasm
+→ julianday
+→ x/sys
+```
+
+```text
+modernc.org/sqlite
+→ modernc.org/sqlite
+→ modernc.org/libc
+   ├── modernc.org/memory
+   └── modernc.org/mathutil
+       └── bigfft
+→ x/sys
+→ additional supporting packages
+```
+
+This means modernc has a materially larger compiled dependency surface for the tested minimal consumer.
+
+That does not make modernc unsuitable. It means its implementation approach carries a larger runtime-support stack into the application and therefore creates a broader supply-chain and review surface.
+
+## Current assessment
+
+```text
+CGO requirement:             No
+database/sql support:        Yes
+Windows dependency path:     Measured
+Compiled dependency surface: Materially larger than ncruces
+Dependency paths:            Clearly attributable
+Build verification:          Pending
+go test:                     Pending
+go mod verify:               Pending
+govulncheck:                 Pending
+```
+
+## Remaining checks
+
+Before recording a broader recommendation, run:
 
 ```powershell
-go mod tidy
-go list -m all
-go mod graph
-go list -deps ./...
-go mod why -m modernc.org/libc
 go mod verify
-go test ./...
 go build .
+go test ./...
 govulncheck ./...
 ```
 
-For a compact view of external compiled packages on Windows:
+The results should be recorded exactly as observed.
 
-```powershell
-go list -deps ./... |
-    Select-String "github.com|golang.org|modernc.org|lukechampine.com"
-```
-
-## Comparison rule
-
-The final comparison must be measured-to-measured.
-
-We should not compare measured ncruces results with assumptions about modernc.
-
-Findings will be added only after the minimal consumer has been created and the dependency, build, and vulnerability checks have been run.
+No clean vulnerability status should be claimed until `govulncheck` has actually been run and reported.
